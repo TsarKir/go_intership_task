@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 90%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        input[type="submit"],
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px; /* Добавляем отступ между кнопками */
+        }
+        input[type="submit"]:hover,
+        .button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Регистрация</h1>
+    <form id="registrationForm">
+        <label for="name">Имя:</label>
+        <input type="text" id="name" name="Name" required><br>
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="Email" required><br>
+        <label for="pass">Пароль:</label>
+        <input type="password" id="pass" name="Password" required><br>
+        <input type="submit" value="Зарегистрироваться">
+    </form>
+    <a href="/">Назад на главную</a>
+    <!-- Блок для вывода информации о пользователе -->
+    <div id="userInfo" style="display: none;">
+        <h2>Успешная регистрация!</h2>
+        <p><strong>Имя:</strong> <span id="displayName"></span></p>
+        <p><strong>Email:</strong> <span id="displayEmail"></span></p>
+        
+        <!-- Кнопки для навигации -->
+        <button class="button" id="backButton">Назад на главную</button>
+    </div>
+
+    <script>
+        document.getElementById('registrationForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Предотвращаем стандартное поведение формы
+
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('pass').value;
+
+            const data = { name, email, pass };
+
+            fetch('/users/registration/create', { 
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Success:', data);
+                
+                alert('Регистрация прошла успешно!'); // Уведомление об успешном входе
+                
+                window.location.href = '/users/login'; 
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        });
+
+        // Обработчик для кнопки "Назад"
+        document.getElementById('backButton').addEventListener('click', function() {
+            window.location.href = '/'; // Перенаправляем на главную страницу
+        });
+    
+    </script>
+</body>
+</html>

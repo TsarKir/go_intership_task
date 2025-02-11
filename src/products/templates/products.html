@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рекомендации продуктов</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .product-container {
+            display: flex; /* Используем flexbox для горизонтального расположения */
+            justify-content: space-around; /* Распределяем пространство между элементами */
+            flex-wrap: wrap; /* Позволяем элементам переноситься на следующую строку при необходимости */
+        }
+        .product-item {
+            margin: 10px; /* Отступы между элементами */
+            padding: 10px; /* Внутренние отступы */
+            border: 1px solid #ccc; /* Рамка вокруг каждого продукта */
+            border-radius: 5px; /* Скругление углов */
+            text-align: center; /* Центрируем текст внутри элемента */
+            width: 150px; /* Ширина каждого элемента */
+        }
+        a {
+            text-decoration: none; /* Убираем подчеркивание */
+            color: #007BFF; /* Цвет ссылки */
+        }
+        a:hover {
+            text-decoration: underline; /* Подчеркивание при наведении */
+        }
+    </style>
+</head>
+<body>
+    <h1>Рекомендованные продукты</h1>
+    <div class="product-container">
+        {{range .Recommendations}}
+            <div class="product-item">
+                <a href="{{.Url}}">{{.Name}}</a>
+            </div>
+        {{end}}
+    </div>
+    <a href="/">Назад на главную</a>
+</body>
+</html>

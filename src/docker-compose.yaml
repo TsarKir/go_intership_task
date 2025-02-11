@@ -1,0 +1,161 @@
+services:
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    healthcheck:
+      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: bitnami/kafka:latest
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LOG_DIRS: /opt/bitnami/kafka/data
+      ALLOW_PLAINTEXT_LISTENER: yes
+    depends_on:
+      - zookeeper
+    healthcheck:
+      test: ["CMD", "kafka-topics.sh", "--list", "--zookeeper", "zookeeper:2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  init-kafka:
+    image: confluentinc/cp-kafka:6.1.1
+    depends_on:
+      - kafka
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      "
+      # blocks until kafka is reachable
+      kafka-topics --bootstrap-server kafka:9092 --list
+
+      echo -e 'Creating kafka topics'
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic user_updates --replication-factor 1 --partitions 1
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic product_updates --replication-factor 1 --partitions 1
+
+      echo -e 'Successfully created the following topics:'
+      kafka-topics --bootstrap-server kafka:9092 --list
+      "
+
+  postgres:
+    image: postgres:latest
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./initdb/:/docker-entrypoint-initdb.d/
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5  
+
+  user-service:
+    build:
+      context: ./users
+      dockerfile: Dockerfile
+    ports:
+      - "9999:9999"
+    environment:
+      KAFKA_BROKER: kafka:9092
+      DATABASE_URL: postgres://postgres:1@postgres:5432/users_db?sslmode=disable
+    depends_on:
+      - kafka
+      - postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9999/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  product-service:
+    build:
+      context: ./products
+      dockerfile: Dockerfile
+    ports:
+      - "7777:7777"
+    environment:
+      KAFKA_BROKER: kafka:9092
+      DATABASE_URL: postgres://postgres:1@postgres:5432/products_db?sslmode=disable
+    depends_on:
+      - kafka
+      - postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7777/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  recommendation-service:
+    build:
+      context: ./recommendations
+      dockerfile: Dockerfile
+    ports:
+      - "6666:6666"
+    environment:
+      KAFKA_BROKER: kafka:9092
+      DATABASE_URL: postgres://postgres:1@postgres:5432/recommends_db?sslmode=disable
+      REDIS_URL: redis:6379
+    depends_on:
+      - kafka
+      - postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6666/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  analytics-service:
+    build:
+      context: ./analytics
+      dockerfile: Dockerfile
+    ports:
+      - "5555:5555"
+    environment:
+      KAFKA_BROKER: kafka:9092
+      DATABASE_URL: postgres://postgres:1@postgres:5432/analytics_db?sslmode=disable
+    depends_on:
+      - kafka
+      - postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5555/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - user-service
+      - product-service
+      - recommendation-service

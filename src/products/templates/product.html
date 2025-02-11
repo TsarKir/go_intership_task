@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .Product.Name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* Изменено на flex-start для нормального отображения */
+            height: auto; /* Изменено на auto для адаптивности */
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .product-info {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+        }
+        .button {
+            background-color: #4CAF50; /* Цвет кнопки */
+            color: white; /* Цвет текста */
+            padding: 10px; /* Отступы */
+            border: none; /* Убираем рамку */
+            border-radius: 4px; /* Закругленные углы */
+            cursor: pointer; /* Курсор указателя */
+            margin-right: 10px; /* Отступ между кнопками */
+        }
+        .button:hover {
+            background-color: #45a049; /* Цвет при наведении */
+        }
+        a {
+            margin-top: 20px;
+        }
+        .like-button.liked {
+            background-color: #ff4081; /* Цвет для лайка */
+        }
+        .like-button.not-liked {
+            background-color: #ccc; /* Цвет для отсутствия лайка */
+        }
+        .recommendations {
+            display: flex; /* Используем flexbox для горизонтального расположения рекомендаций */
+            justify-content: space-around; /* Равномерное распределение пространства между элементами */
+            margin-top: 20px; /* Отступ сверху */
+            width: 100%; /* Ширина контейнера рекомендаций */
+            flex-wrap: wrap; /* Позволяем элементам переноситься на следующую строку при необходимости */
+        }
+        .recommendation-item {
+            margin: 10px; /* Отступы между элементами */
+            padding: 10px; /* Внутренние отступы */
+            border: 1px solid #ccc; /* Рамка вокруг каждого продукта */
+            border-radius: 5px; /* Скругление углов */
+            text-align: center; /* Центрируем текст внутри элемента */
+            width: 150px; /* Ширина каждого элемента */
+            background-color: #fff; /* Фон элемента */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Тень для элемента */
+        }
+        .recommendation-item a {
+            text-decoration: none; /* Убираем подчеркивание */
+            color: #007BFF; /* Цвет ссылки */
+        }
+        .recommendation-item a:hover {
+            text-decoration: underline; /* Подчеркивание при наведении */
+        }
+    </style>
+</head>
+<body>
+    <div class="product-info">
+        <h1>{{ .Product.Name }}</h1>
+        <p><strong>Описание:</strong> {{ .Product.Description }}</p>
+        <p><strong>Цена:</strong> ${{ .Product.Price }}</p>
+        <p><strong>Категория:</strong> {{ .Product.Category }}</p>
+        <p><strong>Лайки:</strong> {{ .Product.Likes }}</p>
+
+        <button class="button like-button {{ if .IsLiked }}liked{{ else }}not-liked{{ end }}" onclick="toggleLike('{{ .Product.ID }}')">
+            {{ if .IsLiked }}Убрать лайк{{ else }}Поставить лайк{{ end }}
+        </button>
+
+        {{ if .IsAdmin }}
+            <button class="button" onclick="location.href='/products/product/update?id={{ .Product.ID }}'">Изменить товар</button>
+            <button class="button" onclick="deleteProduct('{{ .Product.ID }}')">Удалить товар</button>
+        {{ end }}
+    </div>
+
+    <!-- Заголовок рекомендаций -->
+    <h2>Может быть интересно</h2>
+
+    <!-- Отображение рекомендаций -->
+    <div class="recommendations">
+        {{range .Recommendations}}
+            <div class="recommendation-item">
+                <a href="{{.Url}}">{{.Name}}</a>
+            </div>
+        {{end}}
+    </div>
+
+    <a href="/">Назад на главную</a>
+
+    <script>
+        function deleteProduct(productId) {
+            if (confirm("Вы уверены, что хотите удалить этот товар?")) {
+                fetch(`/products/product/delete?id=${productId}`, {
+                    method: 'DELETE',
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Ошибка при удалении товара');
+                    }
+                    window.location.href = "/products";
+                })
+                .catch(error => {
+                    console.error('Ошибка:', error);
+                    alert("Произошла ошибка при удалении товара. Пожалуйста, попробуйте снова.");
+                });
+            }
+        }
+
+        function toggleLike(productId) {
+            fetch(`/products/product/like?id=${productId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Ошибка при изменении статуса лайка');
+                }
+                window.location.reload(); // Перезагружаем страницу для обновления состояния
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                alert("Произошла ошибка при изменении статуса лайка. Пожалуйста, попробуйте снова.");
+            });
+        }
+    </script>
+
+</body>
+</html>

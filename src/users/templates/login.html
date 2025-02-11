@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Authorization</title>
+    <meta name="description" content="Authorization">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="email"],
+        input[type="password"] {
+            width: 90%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h2>Authorization</h2>
+    <form id="loginForm">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+
+        <label for="pass">Пароль:</label>
+        <input type="password" id="pass" name="pass" required>
+
+        <input type="submit" value="Enter">
+    </form>
+    <a href="/">Назад на главную</a>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault(); 
+
+            const formData = new FormData(this); 
+            const data = Object.fromEntries(formData); 
+
+            fetch('/users/login/submit', { 
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json' // Устанавливаем тип контента
+                },
+                body: JSON.stringify(data) // Преобразуем объект в JSON
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Login failed');
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('Login successful!'); // Уведомление об успешном входе
+                console.log(data); // Выводим данные пользователя в консоль
+                window.location.href = '/products'; 
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Login failed. Please check your credentials.');
+            });
+        });
+    </script>
+</body>
+</html>
